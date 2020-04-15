@@ -1,0 +1,21 @@
+FROM balenalib/%%BALENA_MACHINE_NAME%%-alpine:run
+
+RUN install_packages \
+    mpd \
+    rsync
+
+COPY playlists /data/playlists
+COPY mpd.conf /etc/mpd.conf
+COPY entrypoint.sh /entrypoint.sh
+
+
+RUN chmod +x /entrypoint.sh
+VOLUME /data/playlists
+
+ENV UDEV=on
+
+# ENTRYPOINT ["/bin/sleep", "6000"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/usr/bin/mpd", "--no-daemon", "--stderr", "/etc/mpd.conf"]
+# CMD ["/bin/sleep", "6000"]
+
