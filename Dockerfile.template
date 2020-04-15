@@ -1,21 +1,86 @@
-FROM balenalib/%%BALENA_MACHINE_NAME%%-alpine:run
+FROM balenalib/%%BALENA_MACHINE_NAME%%-alpine:build as build
+
+WORKDIR /root
 
 RUN install_packages \
-    mpd \
-    rsync
+    alsa-lib-dev \
+    avahi-dev \
+    boost-dev \
+    build-base \
+    curl-dev \
+    expat-dev \
+    faad2-dev \
+    ffmpeg-dev \
+    flac-dev \
+    glib-dev \
+    gtest-dev \
+    gtest \
+    lame-dev \
+    libao-dev \
+    libcap \
+    libcdio-paranoia-dev \
+    libid3tag-dev \
+    libmad-dev \
+    libmpdclient-dev \
+    libogg-dev \
+    libsamplerate-dev \
+    libshout-dev \
+    libvorbis-dev \
+    meson \
+    mpg123-dev \
+    opus-dev \
+    py3-sphinx
+
+RUN curl -L  https://github.com/MusicPlayerDaemon/MPD/archive/v0.21.22.tar.gz | tar xzf -
+
+RUN curl -L https://github.com/pupnp/pupnp/releases/download/release-1.12.1/libupnp-1.12.1.tar.bz2 | bzip2 -d | tar xf - && \
+    cd libupnp-1.12.1 && \
+    ./configure && \
+    make && \
+    make install
+
+WORKDIR /root/MPD-0.21.22
+
+RUN meson . output/release --buildtype=debugoptimized -Db_ndebug=true -Dupnp=enabled -Dcurl=enabled && \
+    ninja -C output/release && \
+    ninja -C output/release install
+
+
+
+FROM balenalib/%%BALENA_MACHINE_NAME%%-alpine:run
+
+COPY --from=build /usr/local /usr/local
+
+RUN install_packages \
+    alsa-lib \
+    curl \
+    faad2-libs \
+    ffmpeg \
+    glib \
+    libao \
+    libmad \
+    libogg \
+    libid3tag \
+    libvorbis \
+    libsamplerate \
+    libshout \
+    libmpdclient \
+    libcdio-paranoia \
+    mpg123 \
+    rsync \
+    && adduser -D -g audio mpd \
+    && mkdir -p /var/lib/mpd/music
 
 COPY playlists /data/playlists
-COPY mpd.conf /etc/mpd.conf
+COPY mpd.conf.local /etc/mpd.conf.local
+COPY mpd.conf.upnp /etc/mpd.conf.upnp
 COPY entrypoint.sh /entrypoint.sh
-
 
 RUN chmod +x /entrypoint.sh
 VOLUME /data/playlists
 
 ENV UDEV=on
 
-# ENTRYPOINT ["/bin/sleep", "6000"]
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/usr/bin/mpd", "--no-daemon", "--stderr", "/etc/mpd.conf"]
+CMD ["/usr/local/bin/mpd", "--no-daemon", "--stderr", "/etc/mpd.conf"]
 # CMD ["/bin/sleep", "6000"]
-

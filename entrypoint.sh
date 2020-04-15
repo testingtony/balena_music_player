@@ -10,6 +10,9 @@ then
     mkdir ${REMOTE_DIR}
     mount UUID=$REMOTE_MOUNT ${REMOTE_DIR}
     test -x ${REMOTE_DIR}/copyover && ${REMOTE_DIR}/copyover
+    cp /etc/mpd.conf.local /etc/mpd.conf
+else
+    cp /etc/mpd.conf.upnp /etc/mpd.conf
 fi
 
 # sed -e "s/XXXXXX/$DEVICE/" < /etc/mpd.conf.tpl > /etc/mpd.conf
