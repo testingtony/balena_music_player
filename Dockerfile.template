@@ -1,6 +1,5 @@
 FROM balenalib/%%BALENA_MACHINE_NAME%%-alpine:build as build
 
-WORKDIR /root
 
 RUN install_packages \
     alsa-lib-dev \
@@ -31,19 +30,20 @@ RUN install_packages \
     opus-dev \
     py3-sphinx
 
-RUN curl -L  https://github.com/MusicPlayerDaemon/MPD/archive/v0.21.22.tar.gz | tar xzf -
+WORKDIR /root
+RUN curl -L https://github.com/pupnp/pupnp/releases/download/release-1.12.1/libupnp-1.12.1.tar.bz2 | bzip2 -d | tar xf -
+WORKDIR /root/libupnp-1.12.1
+RUN ./configure
+RUN make
+RUN make install
 
-RUN curl -L https://github.com/pupnp/pupnp/releases/download/release-1.12.1/libupnp-1.12.1.tar.bz2 | bzip2 -d | tar xf - && \
-    cd libupnp-1.12.1 && \
-    ./configure && \
-    make && \
-    make install
+WORKDIR /root
 
-WORKDIR /root/MPD-0.21.22
-
-RUN meson . output/release --buildtype=debugoptimized -Db_ndebug=true -Dupnp=enabled -Dcurl=enabled && \
-    ninja -C output/release && \
-    ninja -C output/release install
+RUN git clone https://github.com/MusicPlayerDaemon/MPD.git
+WORKDIR /root/MPD
+RUN meson . output/release --buildtype=debugoptimized -Db_ndebug=true -Dupnp=enabled -Dcurl=enabled
+RUN ninja -C output/release
+RUN ninja -C output/release install
 
 
 
