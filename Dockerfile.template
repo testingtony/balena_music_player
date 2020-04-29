@@ -80,7 +80,8 @@ RUN chmod +x /entrypoint.sh
 VOLUME /data/playlists
 
 ENV UDEV=on
-
+EXPOSE 6600
+HEALTHCHECK CMD /usr/bin/nc -w 2 localhost 6600 || exit 1
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/usr/local/bin/mpd", "--no-daemon", "--stderr", "/etc/mpd.conf"]
 # CMD ["/bin/sleep", "6000"]
